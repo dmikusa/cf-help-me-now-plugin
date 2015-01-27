@@ -1,0 +1,36 @@
+{
+	"ImportPath": "github.com/dmikusa-pivotal/help_request_plugin",
+	"GoVersion": "go1.3.3",
+	"Packages": [
+		"main/help_request_plugin.go",
+		"main/help_request_plugin_test.go",
+		"main/main_suite_test.go"
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/cloudfoundry/cli/plugin",
+			"Comment": "v6.8.0-40-ge4de718",
+			"Rev": "e4de7183cee5131c65b2310ff3f9a3157b9e02a5"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/cli/testhelpers/io",
+			"Comment": "v6.8.0-40-ge4de718",
+			"Rev": "e4de7183cee5131c65b2310ff3f9a3157b9e02a5"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/cli/testhelpers/plugin_builder",
+			"Comment": "v6.8.0-40-ge4de718",
+			"Rev": "e4de7183cee5131c65b2310ff3f9a3157b9e02a5"
+		},
+		{
+			"ImportPath": "github.com/onsi/ginkgo",
+			"Comment": "v1.1.0-26-g0c531ad",
+			"Rev": "0c531ad16e17abb410f33ce73dee5506be603f56"
+		},
+		{
+			"ImportPath": "github.com/onsi/gomega",
+			"Comment": "v1.0-25-g85936b2",
+			"Rev": "85936b29809b7df066a8d839dd105e158e510264"
+		}
+	]
+}
