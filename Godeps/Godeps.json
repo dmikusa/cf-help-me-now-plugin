@@ -8,19 +8,42 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "code.google.com/p/go.crypto/ssh/terminal",
+			"Comment": "null-236",
+			"Rev": "69e2a90ed92d03812364aeb947b7068dc42e561e"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/cli/cf",
+			"Comment": "v6.9.0",
+			"Rev": "620f8411b5ea728a8a5050b4b2d13a3dd845ea4b"
+		},
+		{
 			"ImportPath": "github.com/cloudfoundry/cli/plugin",
 			"Comment": "v6.8.0-40-ge4de718",
-			"Rev": "e4de7183cee5131c65b2310ff3f9a3157b9e02a5"
+			"Rev": "620f8411b5ea728a8a5050b4b2d13a3dd845ea4b"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/testhelpers/io",
 			"Comment": "v6.8.0-40-ge4de718",
-			"Rev": "e4de7183cee5131c65b2310ff3f9a3157b9e02a5"
+			"Rev": "620f8411b5ea728a8a5050b4b2d13a3dd845ea4b"
 		},
 		{
 			"ImportPath": "github.com/cloudfoundry/cli/testhelpers/plugin_builder",
 			"Comment": "v6.8.0-40-ge4de718",
-			"Rev": "e4de7183cee5131c65b2310ff3f9a3157b9e02a5"
+			"Rev": "620f8411b5ea728a8a5050b4b2d13a3dd845ea4b"
+		},
+		{
+			"ImportPath": "github.com/cloudfoundry/gofileutils/fileutils",
+			"Rev": "a4a0cae5ff8a342ba01fce700b9e41c6942c0e5e"
+		},
+		{
+			"ImportPath": "github.com/codegangsta/cli",
+			"Comment": "1.2.0-62-gbf4a526",
+			"Rev": "bf4a526f48af7badd25d2cb02d587e1b01be3b50"
+		},
+		{
+			"ImportPath": "github.com/nicksnyder/go-i18n/i18n",
+			"Rev": "fdd9ce0eff0447ddec6b10625512f49a726418c1"
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
@@ -31,6 +54,10 @@
 			"ImportPath": "github.com/onsi/gomega",
 			"Comment": "v1.0-25-g85936b2",
 			"Rev": "85936b29809b7df066a8d839dd105e158e510264"
+		},
+		{
+			"ImportPath": "github.com/pivotal-cf-experimental/jibber_jabber",
+			"Rev": "901694860a59e63e1d392e6597ca919364f6abd1"
 		}
 	]
 }
