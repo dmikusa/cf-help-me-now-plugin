@@ -26,6 +26,8 @@ func (p *HelpRequestPlugin) Run(cliConnection plugin.CliConnection, args []strin
 		p.name = p.PromptFor("name")
 		p.phone = p.PromptFor("phone")
 		p.email = p.PromptFor("email")
+		p.SubmitRequest()
+		p.Finish()
 	}
 }
 
@@ -37,6 +39,16 @@ func (p *HelpRequestPlugin) Greet() {
 
 func (p *HelpRequestPlugin) PromptFor(item string) string {
 	return p.ui.Ask("What's your %s?", item)
+}
+
+func (p *HelpRequestPlugin) SubmitRequest() {
+	p.ui.Say("Submitting request...")
+	p.ui.Say("...<actually submit request here [name=%s, phone=%s, email=%s]", p.name, p.phone, p.email)
+	p.ui.Say("done!")
+}
+
+func (p *HelpRequestPlugin) Finish() {
+	p.ui.Say("Thanks!  I've submitted your support request.")
 }
 
 func (p *HelpRequestPlugin) GetMetadata() plugin.PluginMetadata {

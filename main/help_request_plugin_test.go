@@ -27,6 +27,8 @@ var _ = Describe("HelpRequestPlugin", func() {
 			})
 			Expect(strings.Join(output, "")).To(ContainSubstring("name"))
 			Expect(strings.Join(output, "")).To(ContainSubstring("email"))
+			Expect(strings.Join(output, "")).To(ContainSubstring("Submitting"))
+			Expect(strings.Join(output, "")).To(ContainSubstring("Thanks!"))
 		})
 	})
 
