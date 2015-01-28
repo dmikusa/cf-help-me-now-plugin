@@ -3,22 +3,29 @@ package main
 import (
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
+	"io"
 	"os"
 )
 
 type HelpRequestPlugin struct {
-	ui terminal.UI
+	ui    terminal.UI
+	name  string
+	phone string
+	email string
 }
 
-func NewHelpRequestPlugin() *HelpRequestPlugin {
+func NewHelpRequestPlugin(reader io.Reader) *HelpRequestPlugin {
 	return &HelpRequestPlugin{
-		ui: terminal.NewUI(os.Stdin, terminal.NewTeePrinter()),
+		ui: terminal.NewUI(reader, terminal.NewTeePrinter()),
 	}
 }
 
 func (p *HelpRequestPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if args[0] == "help-me-now" {
-		p.ui.Say("Args: %v", args)
+		p.Greet()
+		p.name = p.PromptFor("name")
+		p.phone = p.PromptFor("phone")
+		p.email = p.PromptFor("email")
 	}
 }
 
@@ -26,6 +33,10 @@ func (p *HelpRequestPlugin) Greet() {
 	p.ui.Say("Help Request System")
 	p.ui.Say("")
 	p.ui.Say("Welcome, we need to gather a bit of information to get started.")
+}
+
+func (p *HelpRequestPlugin) PromptFor(item string) string {
+	return p.ui.Ask("What's your %s?", item)
 }
 
 func (p *HelpRequestPlugin) GetMetadata() plugin.PluginMetadata {
@@ -49,5 +60,5 @@ func (p *HelpRequestPlugin) GetMetadata() plugin.PluginMetadata {
 }
 
 func main() {
-	plugin.Start(NewHelpRequestPlugin())
+	plugin.Start(NewHelpRequestPlugin(os.Stdin))
 }

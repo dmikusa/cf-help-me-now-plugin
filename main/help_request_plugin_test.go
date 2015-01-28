@@ -6,6 +6,9 @@ import (
 	. "github.com/dmikusa-pivotal/help_request_plugin/main"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"io"
+	"os"
+	"strings"
 )
 
 var _ = Describe("HelpRequestPlugin", func() {
@@ -15,24 +18,38 @@ var _ = Describe("HelpRequestPlugin", func() {
 
 		BeforeEach(func() {
 			fakeCliConnection = &fakes.FakeCliConnection{}
-			helpRequestPlugin = NewHelpRequestPlugin()
+			helpRequestPlugin = NewHelpRequestPlugin(os.Stdin)
 		})
 
 		It("returns the arguments given to it", func() {
 			output := io_helpers.CaptureOutput(func() {
-				helpRequestPlugin.Run(fakeCliConnection, []string{"help-me-now", "arg1", "arg2"})
+				helpRequestPlugin.Run(fakeCliConnection, []string{"help-me-now"})
 			})
-			Expect(output[0]).To(Equal("Args: [help-me-now arg1 arg2]"))
+			Expect(strings.Join(output, "")).To(ContainSubstring("name"))
+			Expect(strings.Join(output, "")).To(ContainSubstring("email"))
 		})
 	})
 
 	Describe("Gathers user information from stdin", func() {
+
 		It("Sends the initial greeting", func() {
-			plugin := NewHelpRequestPlugin()
+			plugin := NewHelpRequestPlugin(os.Stdin)
 			output := io_helpers.CaptureOutput(func() {
 				plugin.Greet()
 			})
 			Expect(output[0]).To(Equal("Help Request System"))
 		})
+
+		It("Asks for a name", func() {
+			var response string
+			io_helpers.CaptureOutput(func() {
+				io_helpers.SimulateStdin("William Lewis Lockwood\n", func(reader io.Reader) {
+					plugin := NewHelpRequestPlugin(reader)
+					response = plugin.PromptFor("name")
+				})
+			})
+			Expect(response).To(Equal("William Lewis Lockwood"))
+		})
 	})
+
 })
