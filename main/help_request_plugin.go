@@ -1,14 +1,19 @@
 package main
 
 import (
-	"fmt"
+	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
+	"os"
 )
 
-type HelpRequestPlugin struct{}
+type HelpRequestPlugin struct {
+}
 
 func (p *HelpRequestPlugin) Run(cliConnection plugin.CliConnection, args []string) {
-	fmt.Println("Args:", args)
+	ui := terminal.NewUI(os.Stdin, terminal.NewTeePrinter())
+	if args[0] == "help-me-now" {
+		ui.Say("Args: %v", args)
+	}
 }
 
 func (p *HelpRequestPlugin) GetMetadata() plugin.PluginMetadata {
