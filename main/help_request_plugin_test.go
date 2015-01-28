@@ -15,7 +15,7 @@ var _ = Describe("HelpRequestPlugin", func() {
 
 		BeforeEach(func() {
 			fakeCliConnection = &fakes.FakeCliConnection{}
-			helpRequestPlugin = &HelpRequestPlugin{}
+			helpRequestPlugin = NewHelpRequestPlugin()
 		})
 
 		It("returns the arguments given to it", func() {
@@ -23,6 +23,16 @@ var _ = Describe("HelpRequestPlugin", func() {
 				helpRequestPlugin.Run(fakeCliConnection, []string{"help-me-now", "arg1", "arg2"})
 			})
 			Expect(output[0]).To(Equal("Args: [help-me-now arg1 arg2]"))
+		})
+	})
+
+	Describe("Gathers user information from stdin", func() {
+		It("Sends the initial greeting", func() {
+			plugin := NewHelpRequestPlugin()
+			output := io_helpers.CaptureOutput(func() {
+				plugin.Greet()
+			})
+			Expect(output[0]).To(Equal("Help Request System"))
 		})
 	})
 })

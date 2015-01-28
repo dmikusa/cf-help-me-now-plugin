@@ -7,13 +7,25 @@ import (
 )
 
 type HelpRequestPlugin struct {
+	ui terminal.UI
+}
+
+func NewHelpRequestPlugin() *HelpRequestPlugin {
+	return &HelpRequestPlugin{
+		ui: terminal.NewUI(os.Stdin, terminal.NewTeePrinter()),
+	}
 }
 
 func (p *HelpRequestPlugin) Run(cliConnection plugin.CliConnection, args []string) {
-	ui := terminal.NewUI(os.Stdin, terminal.NewTeePrinter())
 	if args[0] == "help-me-now" {
-		ui.Say("Args: %v", args)
+		p.ui.Say("Args: %v", args)
 	}
+}
+
+func (p *HelpRequestPlugin) Greet() {
+	p.ui.Say("Help Request System")
+	p.ui.Say("")
+	p.ui.Say("Welcome, we need to gather a bit of information to get started.")
 }
 
 func (p *HelpRequestPlugin) GetMetadata() plugin.PluginMetadata {
@@ -37,5 +49,5 @@ func (p *HelpRequestPlugin) GetMetadata() plugin.PluginMetadata {
 }
 
 func main() {
-	plugin.Start(new(HelpRequestPlugin))
+	plugin.Start(NewHelpRequestPlugin())
 }
