@@ -32,6 +32,7 @@ func (p *HelpRequestPlugin) Run(cliConnection plugin.CliConnection, args []strin
 }
 
 func (p *HelpRequestPlugin) Greet() {
+	p.ui.Say("")
 	p.ui.Say("Help Request System")
 	p.ui.Say("")
 	p.ui.Say("Welcome, we need to gather a bit of information to get started.")
