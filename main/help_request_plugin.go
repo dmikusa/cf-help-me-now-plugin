@@ -13,13 +13,14 @@ import (
 )
 
 type HelpRequestPlugin struct {
-	ui      terminal.UI
-	Name    string
-	Phone   string
-	Email   string
-	Desc    string
-	ReqType string
-	ReqUrl  string
+	ui     terminal.UI
+	Name   string
+	Phone  string
+	Email  string
+	Desc   string
+	Org    string
+	Space  string
+	ReqUrl string
 }
 
 func NewHelpRequestPlugin(reader io.Reader) *HelpRequestPlugin {
@@ -33,11 +34,39 @@ func (p *HelpRequestPlugin) Run(cliConnection plugin.CliConnection, args []strin
 		p.Greet()
 		p.Name = p.PromptFor("name")
 		p.Phone = p.PromptFor("phone")
-		p.Email = p.PromptFor("email")
 		p.Desc = p.PromptFor("problem description")
-		p.ReqType = p.PromptForRequestType()
+		p.LoadUserInfo(cliConnection)
 		p.SubmitRequest()
 		p.Finish()
+	}
+}
+
+func (p *HelpRequestPlugin) LoadUserInfo(cliConnection plugin.CliConnection) {
+	p.ui.Say("We're going to automatically gather your account information.  One minutes...")
+	output, err := cliConnection.CliCommand("target")
+	if err != nil {
+		p.ui.Say("Sorry, there was a problem loading your information.  We'll need" +
+			" to collect a few things to continue.")
+		p.Email = p.PromptFor("email")
+		p.Org = p.PromptFor("organization name")
+		p.Space = p.PromptFor("space name")
+	} else {
+		for _, line := range output {
+			sections := strings.SplitN(line, ":", 2)
+			if len(sections) == 2 {
+				key := strings.TrimSpace(sections[0])
+				val := strings.TrimSpace(sections[1])
+				if key == "User" {
+					p.Email = val
+				} else if key == "Org" {
+					p.Org = val
+				} else if key == "Space" {
+					p.Space = val
+				} else if key == "API endpoint" {
+					p.Desc += "\nDetected Endpoint: " + val + "\n"
+				}
+			}
+		}
 	}
 }
 
@@ -52,18 +81,6 @@ func (p *HelpRequestPlugin) PromptFor(item string) string {
 	return p.ui.Ask("What's your %s?", item)
 }
 
-func (p *HelpRequestPlugin) PromptForRequestType() string {
-	resp := p.ui.Ask("How would you like to be contacted? (phone or IM)")
-	if strings.ToLower(resp) == "phone" {
-		return "PHONE"
-	} else if strings.ToUpper(resp) == "IM" {
-		return "IM"
-	} else {
-		p.ui.Say("Invalid response, defaulting to IM.")
-		return "IM"
-	}
-}
-
 func (p *HelpRequestPlugin) SubmitRequest() {
 	var err error
 	p.ui.Say("Submitting request...")
@@ -75,7 +92,7 @@ func (p *HelpRequestPlugin) SubmitRequest() {
 }
 
 func (p *HelpRequestPlugin) send() (string, error) {
-	url := "https://pws-callme.cfapps.io/helprequests"
+	url := "http://pws-callme.cfapps.io/helprequests"
 	req, err := http.NewRequest("POST", url,
 		bytes.NewBufferString(
 			`{"fullname":"`+p.Name+
@@ -83,7 +100,7 @@ func (p *HelpRequestPlugin) send() (string, error) {
 				`","email":"`+p.Email+
 				`","username":"`+p.Email+
 				`","description":"`+p.Desc+
-				`","type":"`+p.ReqType+`"}`))
+				`","type":"PHONE"}`))
 	if err != nil {
 		return "", err
 	}

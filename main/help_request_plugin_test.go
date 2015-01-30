@@ -1,6 +1,7 @@
 package main_test
 
 import (
+	"errors"
 	"github.com/cloudfoundry/cli/plugin/fakes"
 	io_helpers "github.com/cloudfoundry/cli/testhelpers/io"
 	. "github.com/dmikusa-pivotal/help_request_plugin/main"
@@ -26,10 +27,43 @@ var _ = Describe("HelpRequestPlugin", func() {
 				helpRequestPlugin.Run(fakeCliConnection, []string{"help-me-now"})
 			})
 			Expect(strings.Join(output, "")).To(ContainSubstring("name"))
-			Expect(strings.Join(output, "")).To(ContainSubstring("email"))
+			Expect(strings.Join(output, "")).To(ContainSubstring("description"))
 			Expect(strings.Join(output, "")).To(ContainSubstring("Submitting"))
 			Expect(strings.Join(output, "")).To(ContainSubstring("Thanks!"))
 		})
+
+		It("Loads user info automatically", func() {
+			fakeCliConnection.CliCommandReturns([]string{
+				"",
+				"API endpoint:   https://api.run.pivotal.io (API version: 2.21.0)",
+				"User:           dmikusa@gopivotal.com",
+				"Org:            dmikusa",
+				"Space:          development"}, nil)
+			plugin := NewHelpRequestPlugin(os.Stdin)
+			output := io_helpers.CaptureOutput(func() {
+				plugin.LoadUserInfo(fakeCliConnection)
+			})
+			Expect(output[0]).To(ContainSubstring("We're going to automatically"))
+			Expect(plugin.Email).To(Equal("dmikusa@gopivotal.com"))
+			Expect(plugin.Org).To(Equal("dmikusa"))
+			Expect(plugin.Space).To(Equal("development"))
+		})
+
+		It("Auto load of info fails, fall back to manual", func() {
+			fakeCliConnection.CliCommandReturns([]string{}, errors.New("fail :("))
+			io_helpers.CaptureOutput(func() {
+				io_helpers.SimulateStdin("email\norg\nspace\n", func(reader io.Reader) {
+					plugin := NewHelpRequestPlugin(reader)
+					output := io_helpers.CaptureOutput(func() {
+						plugin.LoadUserInfo(fakeCliConnection)
+					})
+					Expect(output[0]).To(ContainSubstring("We're going to automatically"))
+					Expect(output[1]).To(ContainSubstring("Sorry, there was a problem"))
+					Expect(plugin.Email).To(Equal("email"))
+				})
+			})
+		})
+
 	})
 
 	Describe("Gathers user information from stdin", func() {
@@ -52,39 +86,6 @@ var _ = Describe("HelpRequestPlugin", func() {
 			})
 			Expect(response).To(Equal("William Lewis Lockwood"))
 		})
-
-		It("Asks for a type, get PHONE", func() {
-			var response string
-			io_helpers.CaptureOutput(func() {
-				io_helpers.SimulateStdin("phone\n", func(reader io.Reader) {
-					plugin := NewHelpRequestPlugin(reader)
-					response = plugin.PromptForRequestType()
-				})
-			})
-			Expect(response).To(Equal("PHONE"))
-		})
-
-		It("Asks for a type, get IM", func() {
-			var response string
-			io_helpers.CaptureOutput(func() {
-				io_helpers.SimulateStdin("IM\n", func(reader io.Reader) {
-					plugin := NewHelpRequestPlugin(reader)
-					response = plugin.PromptForRequestType()
-				})
-			})
-			Expect(response).To(Equal("IM"))
-		})
-
-		It("Asks for a type, get DEFAULT", func() {
-			var response string
-			io_helpers.CaptureOutput(func() {
-				io_helpers.SimulateStdin("dkjfdk\n", func(reader io.Reader) {
-					plugin := NewHelpRequestPlugin(reader)
-					response = plugin.PromptForRequestType()
-				})
-			})
-			Expect(response).To(Equal("IM"))
-		})
 	})
 
 	Describe("Sends request to the server", func() {
@@ -95,10 +96,9 @@ var _ = Describe("HelpRequestPlugin", func() {
 				plugin.Phone = "5555555785"
 				plugin.Email = "jsmith@work.com"
 				plugin.Desc = "I need help with PWS!"
-				plugin.ReqType = "PHONE"
 				plugin.SubmitRequest()
 			})
-			Expect(plugin.ReqUrl).To(HavePrefix("http://localhost:8080/helprequests/"))
+			Expect(plugin.ReqUrl).To(HavePrefix("http://pws-callme.cfapps.io/helprequests"))
 		})
 	})
 })
