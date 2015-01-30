@@ -43,7 +43,7 @@ func (p *HelpRequestPlugin) Run(cliConnection plugin.CliConnection, args []strin
 
 func (p *HelpRequestPlugin) LoadUserInfo(cliConnection plugin.CliConnection) {
 	p.ui.Say("We're going to automatically gather your account information.  One minutes...")
-	output, err := cliConnection.CliCommand("target")
+	output, err := cliConnection.CliCommandWithoutTerminalOutput("target")
 	if err != nil {
 		p.ui.Say("Sorry, there was a problem loading your information.  We'll need" +
 			" to collect a few things to continue.")
@@ -86,9 +86,12 @@ func (p *HelpRequestPlugin) SubmitRequest() {
 	p.ui.Say("Submitting request...")
 	p.ReqUrl, err = p.send()
 	if err != nil {
-		p.ui.Say("Failed: <%v>", err)
+		p.ui.Say("Sorry, we're unable to submit your request at this time.")
+		p.ui.Say("Error: %q", err)
+	} else {
+		p.ui.Say("Your request was accepted!  You should receive a call shortly.")
+		p.ui.Say("To check the status of your request, run `cf help-me-now --status`.")
 	}
-	p.ui.Say("done!")
 }
 
 func (p *HelpRequestPlugin) send() (string, error) {
