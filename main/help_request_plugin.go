@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/cloudfoundry/cli/cf/terminal"
@@ -18,8 +19,6 @@ type HelpRequestPlugin struct {
 	Phone  string
 	Email  string
 	Desc   string
-	Org    string
-	Space  string
 	ReqUrl string
 }
 
@@ -41,15 +40,19 @@ func (p *HelpRequestPlugin) Run(cliConnection plugin.CliConnection, args []strin
 	}
 }
 
+func (p *HelpRequestPlugin) appendToDesc(val string) {
+	p.Desc += "\n" + val + "\n"
+}
+
 func (p *HelpRequestPlugin) LoadUserInfo(cliConnection plugin.CliConnection) {
-	p.ui.Say("We're going to automatically gather your account information.  One minutes...")
+	p.ui.Say("We're going to automatically gather your account information.  One minute...")
 	output, err := cliConnection.CliCommandWithoutTerminalOutput("target")
 	if err != nil {
 		p.ui.Say("Sorry, there was a problem loading your information.  We'll need" +
 			" to collect a few things to continue.")
 		p.Email = p.PromptFor("email")
-		p.Org = p.PromptFor("organization name")
-		p.Space = p.PromptFor("space name")
+		p.appendToDesc(p.PromptFor("organization name"))
+		p.appendToDesc(p.PromptFor("space name"))
 	} else {
 		for _, line := range output {
 			sections := strings.SplitN(line, ":", 2)
@@ -58,12 +61,8 @@ func (p *HelpRequestPlugin) LoadUserInfo(cliConnection plugin.CliConnection) {
 				val := strings.TrimSpace(sections[1])
 				if key == "User" {
 					p.Email = val
-				} else if key == "Org" {
-					p.Org = val
-				} else if key == "Space" {
-					p.Space = val
-				} else if key == "API endpoint" {
-					p.Desc += "\nDetected Endpoint: " + val + "\n"
+				} else {
+					p.appendToDesc(line)
 				}
 			}
 		}
@@ -94,16 +93,28 @@ func (p *HelpRequestPlugin) SubmitRequest() {
 	}
 }
 
+func (p *HelpRequestPlugin) ToJson() (*bytes.Buffer, error) {
+	m := make(map[string]string)
+	m["fullname"] = p.Name
+	m["phone"] = p.Phone
+	m["email"] = p.Email
+	m["username"] = p.Email
+	m["description"] = p.Desc
+	m["type"] = "PHONE"
+	b, err := json.Marshal(m)
+	if err != nil {
+		return nil, err
+	}
+	return bytes.NewBuffer(b), nil
+}
+
 func (p *HelpRequestPlugin) send() (string, error) {
 	url := "http://pws-callme.cfapps.io/helprequests"
-	req, err := http.NewRequest("POST", url,
-		bytes.NewBufferString(
-			`{"fullname":"`+p.Name+
-				`","phone":"`+p.Phone+
-				`","email":"`+p.Email+
-				`","username":"`+p.Email+
-				`","description":"`+p.Desc+
-				`","type":"PHONE"}`))
+	buf, err := p.ToJson()
+	if err != nil {
+		return "", err
+	}
+	req, err := http.NewRequest("POST", url, buf)
 	if err != nil {
 		return "", err
 	}
