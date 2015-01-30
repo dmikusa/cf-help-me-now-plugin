@@ -39,7 +39,7 @@ var _ = Describe("HelpRequestPlugin", func() {
 			output := io_helpers.CaptureOutput(func() {
 				plugin.Greet()
 			})
-			Expect(output[0]).To(Equal("Help Request System"))
+			Expect(output[1]).To(Equal("Help Request System"))
 		})
 
 		It("Asks for a name", func() {
