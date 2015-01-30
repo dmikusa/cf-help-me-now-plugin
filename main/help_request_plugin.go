@@ -75,8 +75,7 @@ func (p *HelpRequestPlugin) SubmitRequest() {
 }
 
 func (p *HelpRequestPlugin) send() (string, error) {
-	//url := "https://pws-callme.cfapps.io/helprequests"
-	url := "http://localhost:8080/helprequests"
+	url := "https://pws-callme.cfapps.io/helprequests"
 	req, err := http.NewRequest("POST", url,
 		bytes.NewBufferString(
 			`{"fullname":"`+p.Name+
