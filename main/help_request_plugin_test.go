@@ -52,6 +52,53 @@ var _ = Describe("HelpRequestPlugin", func() {
 			})
 			Expect(response).To(Equal("William Lewis Lockwood"))
 		})
+
+		It("Asks for a type, get PHONE", func() {
+			var response string
+			io_helpers.CaptureOutput(func() {
+				io_helpers.SimulateStdin("phone\n", func(reader io.Reader) {
+					plugin := NewHelpRequestPlugin(reader)
+					response = plugin.PromptForRequestType()
+				})
+			})
+			Expect(response).To(Equal("PHONE"))
+		})
+
+		It("Asks for a type, get IM", func() {
+			var response string
+			io_helpers.CaptureOutput(func() {
+				io_helpers.SimulateStdin("IM\n", func(reader io.Reader) {
+					plugin := NewHelpRequestPlugin(reader)
+					response = plugin.PromptForRequestType()
+				})
+			})
+			Expect(response).To(Equal("IM"))
+		})
+
+		It("Asks for a type, get DEFAULT", func() {
+			var response string
+			io_helpers.CaptureOutput(func() {
+				io_helpers.SimulateStdin("dkjfdk\n", func(reader io.Reader) {
+					plugin := NewHelpRequestPlugin(reader)
+					response = plugin.PromptForRequestType()
+				})
+			})
+			Expect(response).To(Equal("IM"))
+		})
 	})
 
+	Describe("Sends request to the server", func() {
+		It("Sends a valid request", func() {
+			plugin := NewHelpRequestPlugin(os.Stdin)
+			io_helpers.CaptureOutput(func() {
+				plugin.Name = "Joe Smith"
+				plugin.Phone = "5555555785"
+				plugin.Email = "jsmith@work.com"
+				plugin.Desc = "I need help with PWS!"
+				plugin.ReqType = "PHONE"
+				plugin.SubmitRequest()
+			})
+			Expect(plugin.ReqUrl).To(HavePrefix("http://localhost:8080/helprequests/"))
+		})
+	})
 })
