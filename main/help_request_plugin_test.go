@@ -69,17 +69,6 @@ var _ = Describe("HelpRequestPlugin", func() {
 				})
 			})
 		})
-
-		It("Tests json dump", func() {
-			plugin := NewHelpRequestPlugin(nil)
-			plugin.Name = "Jack Johnson"
-			plugin.Phone = "555-555-5758"
-			plugin.Email = "jack@johnson.com"
-			plugin.Desc = `Some field with odd" characters \s and'\nmorestuff\n\r\na`
-			buf, _ := plugin.ToJson()
-			Expect(buf).ShouldNot(BeNil())
-		})
-
 	})
 
 	Describe("Gathers user information from stdin", func() {
@@ -116,5 +105,38 @@ var _ = Describe("HelpRequestPlugin", func() {
 			})
 			Expect(plugin.ReqUrl).To(HavePrefix("http://pws-callme.cfapps.io/helprequests"))
 		})
+	})
+
+	Describe("Persists data", func() {
+
+		BeforeEach(func() {
+			NewHelpRequestPlugin(nil).Clear()
+		})
+
+		It("Tests json dump", func() {
+			plugin := NewHelpRequestPlugin(nil)
+			plugin.Name = "Jack Johnson"
+			plugin.Phone = "555-555-5758"
+			plugin.Email = "jack@johnson.com"
+			plugin.Desc = `Some field with odd" characters \s and'\nmorestuff\n\r\na`
+			buf, _ := plugin.ToJson()
+			Expect(buf).ShouldNot(BeNil())
+		})
+
+		It("Tests json save then load", func() {
+			plugin := NewHelpRequestPlugin(nil)
+			plugin.Name = "Jack Johnson"
+			plugin.Phone = "555-555-5758"
+			plugin.Email = "jack@johnson.com"
+			plugin.Desc = `Some field with odd" characters \s and'\nmorestuff\n\r\na`
+			plugin.Save()
+			lp := NewHelpRequestPlugin(nil)
+			lp.Load()
+			Expect(lp.Name).To(Equal(plugin.Name))
+			Expect(lp.Email).To(Equal(plugin.Email))
+			Expect(lp.Phone).To(Equal(plugin.Phone))
+			Expect(lp.Desc).To(Equal(plugin.Desc))
+		})
+
 	})
 })

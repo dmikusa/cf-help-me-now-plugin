@@ -8,10 +8,19 @@ import (
 	"github.com/cloudfoundry/cli/cf/terminal"
 	"github.com/cloudfoundry/cli/plugin"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"os/user"
+	"path/filepath"
 	"strings"
 )
+
+func panicOnError(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
 
 type HelpRequestPlugin struct {
 	ui     terminal.UI
@@ -30,13 +39,17 @@ func NewHelpRequestPlugin(reader io.Reader) *HelpRequestPlugin {
 
 func (p *HelpRequestPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if args[0] == "help-me-now" {
-		p.Greet()
-		p.Name = p.PromptFor("name")
-		p.Phone = p.PromptFor("phone")
-		p.Desc = p.PromptFor("problem description")
-		p.LoadUserInfo(cliConnection)
-		p.SubmitRequest()
-		p.Finish()
+		if len(args) == 1 {
+			p.Greet()
+			p.Name = p.PromptFor("name")
+			p.Phone = p.PromptFor("phone")
+			p.Desc = p.PromptFor("problem description")
+			p.LoadUserInfo(cliConnection)
+			p.SubmitRequest()
+			p.Finish()
+		} else if len(args) == 2 && args[1] == "--status" {
+			// TODO: check status
+		}
 	}
 }
 
@@ -83,6 +96,7 @@ func (p *HelpRequestPlugin) PromptFor(item string) string {
 func (p *HelpRequestPlugin) SubmitRequest() {
 	var err error
 	p.ui.Say("Submitting request...")
+	p.Save()
 	p.ReqUrl, err = p.send()
 	if err != nil {
 		p.ui.Say("Sorry, we're unable to submit your request at this time.")
@@ -91,9 +105,55 @@ func (p *HelpRequestPlugin) SubmitRequest() {
 		p.ui.Say("Your request was accepted!  You should receive a call shortly.")
 		p.ui.Say("To check the status of your request, run `cf help-me-now --status`.")
 	}
+	p.Save()
 }
 
-func (p *HelpRequestPlugin) ToJson() (*bytes.Buffer, error) {
+func (p *HelpRequestPlugin) Clear() {
+	u, err := user.Current()
+	panicOnError(err)
+	path := filepath.Join(u.HomeDir, ".cf", "help-me-now", "request.txt")
+	if _, err := os.Stat(path); os.IsExist(err) {
+		err = os.Remove(path)
+		panicOnError(err)
+	}
+}
+
+func (p *HelpRequestPlugin) Load() {
+	u, err := user.Current()
+	panicOnError(err)
+	path := filepath.Join(u.HomeDir, ".cf", "help-me-now", "request.txt")
+	data, err := ioutil.ReadFile(path)
+	panicOnError(err)
+	err = json.Unmarshal(data, &p)
+	panicOnError(err)
+}
+
+func (p *HelpRequestPlugin) Save() {
+	u, err := user.Current()
+	panicOnError(err)
+	path := filepath.Join(u.HomeDir, ".cf", "help-me-now")
+	os.MkdirAll(path, 0755)
+	path = filepath.Join(path, "request.txt")
+	b, err := json.Marshal(p)
+	panicOnError(err)
+	err = ioutil.WriteFile(path, b, 0644)
+	panicOnError(err)
+}
+
+func (p *HelpRequestPlugin) FromJson(blob []byte) error {
+	m := make(map[string]string)
+	err := json.Unmarshal(blob, &m)
+	if err != nil {
+		return err
+	}
+	p.Name = m["fullname"]
+	p.Phone = m["phone"]
+	p.Email = m["email"]
+	p.Desc = m["description"]
+	return nil
+}
+
+func (p *HelpRequestPlugin) ToJson() ([]byte, error) {
 	m := make(map[string]string)
 	m["fullname"] = p.Name
 	m["phone"] = p.Phone
@@ -105,16 +165,16 @@ func (p *HelpRequestPlugin) ToJson() (*bytes.Buffer, error) {
 	if err != nil {
 		return nil, err
 	}
-	return bytes.NewBuffer(b), nil
+	return b, nil
 }
 
 func (p *HelpRequestPlugin) send() (string, error) {
 	url := "http://pws-callme.cfapps.io/helprequests"
-	buf, err := p.ToJson()
+	b, err := p.ToJson()
 	if err != nil {
 		return "", err
 	}
-	req, err := http.NewRequest("POST", url, buf)
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(b))
 	if err != nil {
 		return "", err
 	}
@@ -152,7 +212,7 @@ func (p *HelpRequestPlugin) GetMetadata() plugin.PluginMetadata {
 				Name:     "help-me-now",
 				HelpText: "Submit a request for help now!",
 				UsageDetails: plugin.Usage{
-					Usage: "help-me-now\n    cf help-me-now",
+					Usage: "help-me-now [--status]\n    cf help-me-now",
 				},
 			},
 		},
