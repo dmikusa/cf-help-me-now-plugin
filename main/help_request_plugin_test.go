@@ -105,6 +105,14 @@ var _ = Describe("HelpRequestPlugin", func() {
 			})
 			Expect(plugin.ReqUrl).To(HavePrefix("http://pws-callme.cfapps.io/helprequests"))
 		})
+
+		It("Checks the status of a request", func() {
+			plugin := NewHelpRequestPlugin(os.Stdin)
+			plugin.ReqUrl = "http://pws-callme.cfapps.io/helprequests/151"
+			status, err := plugin.Status()
+			Expect(err).To(BeNil())
+			Expect(status).To(Equal("QUEUED"))
+		})
 	})
 
 	Describe("Persists data", func() {

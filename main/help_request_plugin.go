@@ -40,6 +40,7 @@ func NewHelpRequestPlugin(reader io.Reader) *HelpRequestPlugin {
 func (p *HelpRequestPlugin) Run(cliConnection plugin.CliConnection, args []string) {
 	if args[0] == "help-me-now" {
 		if len(args) == 1 {
+			p.Clear()
 			p.Greet()
 			p.Name = p.PromptFor("name")
 			p.Phone = p.PromptFor("phone")
@@ -48,13 +49,25 @@ func (p *HelpRequestPlugin) Run(cliConnection plugin.CliConnection, args []strin
 			p.SubmitRequest()
 			p.Finish()
 		} else if len(args) == 2 && args[1] == "--status" {
-			// TODO: check status
+			path := filepath.Join(p.pluginDataDir(), "request.txt")
+			if _, err := os.Stat(path); os.IsExist(err) {
+				p.Load()
+				p.ui.Say("Request Status: %s", p.Status())
+			} else {
+				p.ui.Say("Sorry, could not find an existing request.  Please submit again.")
+			}
 		}
 	}
 }
 
 func (p *HelpRequestPlugin) appendToDesc(val string) {
 	p.Desc += "\n" + val + "\n"
+}
+
+func (p *HelpRequestPlugin) pluginDataDir() string {
+	u, err := user.Current()
+	panicOnError(err)
+	return filepath.Join(u.HomeDir, ".cf", "help-me-now")
 }
 
 func (p *HelpRequestPlugin) LoadUserInfo(cliConnection plugin.CliConnection) {
@@ -109,9 +122,7 @@ func (p *HelpRequestPlugin) SubmitRequest() {
 }
 
 func (p *HelpRequestPlugin) Clear() {
-	u, err := user.Current()
-	panicOnError(err)
-	path := filepath.Join(u.HomeDir, ".cf", "help-me-now", "request.txt")
+	path := filepath.Join(p.pluginDataDir(), "request.txt")
 	if _, err := os.Stat(path); os.IsExist(err) {
 		err = os.Remove(path)
 		panicOnError(err)
@@ -119,9 +130,7 @@ func (p *HelpRequestPlugin) Clear() {
 }
 
 func (p *HelpRequestPlugin) Load() {
-	u, err := user.Current()
-	panicOnError(err)
-	path := filepath.Join(u.HomeDir, ".cf", "help-me-now", "request.txt")
+	path := filepath.Join(p.pluginDataDir(), "request.txt")
 	data, err := ioutil.ReadFile(path)
 	panicOnError(err)
 	err = json.Unmarshal(data, &p)
@@ -129,9 +138,7 @@ func (p *HelpRequestPlugin) Load() {
 }
 
 func (p *HelpRequestPlugin) Save() {
-	u, err := user.Current()
-	panicOnError(err)
-	path := filepath.Join(u.HomeDir, ".cf", "help-me-now")
+	path := p.pluginDataDir()
 	os.MkdirAll(path, 0755)
 	path = filepath.Join(path, "request.txt")
 	b, err := json.Marshal(p)
@@ -193,6 +200,24 @@ func (p *HelpRequestPlugin) send() (string, error) {
 			return "", errors.New(fmt.Sprintf("Status: <%s> - <%d>", resp.Status, resp.StatusCode))
 		}
 	}
+}
+
+func (p *HelpRequestPlugin) Status() (interface{}, error) {
+	resp, err := http.Get(p.ReqUrl)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	m := make(map[string]interface{})
+	err = json.Unmarshal(body, &m)
+	if err != nil {
+		return "", err
+	}
+	return m["status"], nil
 }
 
 func (p *HelpRequestPlugin) Finish() {
