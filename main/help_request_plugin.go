@@ -50,9 +50,11 @@ func (p *HelpRequestPlugin) Run(cliConnection plugin.CliConnection, args []strin
 			p.Finish()
 		} else if len(args) == 2 && args[1] == "--status" {
 			path := filepath.Join(p.pluginDataDir(), "request.txt")
-			if _, err := os.Stat(path); os.IsExist(err) {
+			if _, err := os.Stat(path); err == nil {
 				p.Load()
-				p.ui.Say("Request Status: %s", p.Status())
+				status, err := p.Status()
+				panicOnError(err)
+				p.ui.Say("Request Status: %s", status)
 			} else {
 				p.ui.Say("Sorry, could not find an existing request.  Please submit again.")
 			}
